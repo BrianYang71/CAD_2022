@@ -1,1 +1,0 @@
-/usr/bin/c++   -Wall -O2   CMakeFiles/regression.dir/unittest/regression.cpp.o CMakeFiles/regression.dir/verilog_lexer.yy.cc.o CMakeFiles/regression.dir/verilog_parser.tab.cc.o  -o ../unittest/regression 

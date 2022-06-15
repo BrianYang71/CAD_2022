@@ -1,1 +1,0 @@
-/usr/bin/c++   -Wall -O2   CMakeFiles/ot_parser.dir/example/ot_parser.cpp.o CMakeFiles/ot_parser.dir/verilog_lexer.yy.cc.o CMakeFiles/ot_parser.dir/verilog_parser.tab.cc.o  -o ../example/ot_parser 

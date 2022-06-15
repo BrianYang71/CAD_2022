@@ -1,0 +1,10 @@
+.model top1
+.inputs x1 x2 x3
+.outputs z 
+
+.names x1 x2 x3 z
+11- 1
+-10 1
+1-0 1
+
+.end

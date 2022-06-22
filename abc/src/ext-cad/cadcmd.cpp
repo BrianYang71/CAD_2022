@@ -151,10 +151,11 @@ usage:
 int Cad_CommandPrintFA(Abc_Frame_t *pAbc, int argc, char **argv)
 {
   Abc_Ntk_t *pNtk = Abc_FrameReadNtk(pAbc);
-  Gia_Man_t *p = pAbc->pGia;
-  Vec_Int_t *vAdds = Ree_ManComputeCuts(p, NULL, 0);
-  int i;
-  for (i = 0; 6 * i < Vec_IntSize(vAdds); i++)
+  Gia_Man_t *pMan = pAbc->pGia;
+  Vec_Int_t *vXors = NULL;
+  Vec_Int_t *vAdds = Ree_ManComputeCuts(pMan, &vXors, 0);
+
+  for (int i = 0; 6 * i < Vec_IntSize(vAdds); i++)
   {
     printf("%6d : ", i);
     printf("%6d ", Vec_IntEntry(vAdds, 6 * i + 0));
@@ -166,6 +167,17 @@ int Cad_CommandPrintFA(Abc_Frame_t *pAbc, int argc, char **argv)
     printf("  (%d)", Vec_IntEntry(vAdds, 6 * i + 5));
     printf("\n");
   }
+  Acec_Box_t *pBox = Acec_ProduceBox(pMan, 0);
+  printf("Adders:\n");
+  Acec_PrintAdders(pBox->vAdds, vAdds);
+  printf("Inputs:\n");
+  Vec_WecPrintLits(pBox->vLeafLits);
+  printf("Outputs:\n");
+  Vec_WecPrintLits(pBox->vRootLits);
+
+  Vec_IntFree(vXors);
+  Vec_IntFree(vAdds);
+
   /*
   Acec_Box_t *pBox = Acec_ProduceBox(p, 0);
   Acec_TreePrintBox(pBox, vAdds);

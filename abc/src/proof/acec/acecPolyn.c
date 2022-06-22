@@ -22,9 +22,9 @@
 #include "misc/vec/vecWec.h"
 #include "misc/vec/vecHsh.h"
 #include "misc/vec/vecQue.h"
-
+#include "misc/vec/vecInt.h"
+#include <math.h>
 ABC_NAMESPACE_IMPL_START
-
 
 ////////////////////////////////////////////////////////////////////////
 ///                        DECLARATIONS                              ///
@@ -57,7 +57,14 @@ struct Pln_Man_t_
     int            nBuilds;   // built monomials
     int            nUsed;     // used monomials
 };
-
+typedef struct InfoPio{
+        int nPi;
+        int nPo;
+        int* bit;
+        int** coeff;
+        int* cnt;
+        int size;
+}InfoPio;
 ////////////////////////////////////////////////////////////////////////
 ///                     FUNCTION DEFINITIONS                         ///
 ////////////////////////////////////////////////////////////////////////
@@ -151,11 +158,154 @@ void Pln_ManPrintFinal( Pln_Man_t * p, int fVerbose, int fVeryVerbose )
         Vec_IntForEachEntry( vArray, Entry, k )
             printf( "%s%d", Entry < 0 ? "-" : "+", (1 << (Abc_AbsInt(Entry)-1)) );
         vArray = Hsh_VecReadEntry( p->pHashM, iMono );
-        Vec_IntForEachEntry( vArray, Entry, k )
+		Vec_IntForEachEntry( vArray, Entry, k )
             printf( " * %d", Entry );
         printf( "\n" );
     }
     printf( "HashC = %d. HashM = %d.  Total = %d. Used = %d.  ", Hsh_VecSize(p->pHashC), Hsh_VecSize(p->pHashM), p->nBuilds, Vec_IntSize(vPairs)/4 );
+    Vec_IntFree( vPairs );
+}
+
+
+void Pln_ManPrint_CAD( Pln_Man_t * p, int fVerbose, int fVeryVerbose )
+{
+    Vec_Int_t * vArray;
+    int i, k, Entry, iMono, iConst;
+    // collect triples
+    Vec_Int_t * vPairs = Vec_IntAlloc( 100 );
+    Vec_IntForEachEntry( p->vCoefs, iConst, iMono )
+    {
+        if ( iConst == 0 ) 
+            continue;
+        vArray = Hsh_VecReadEntry( p->pHashC, iConst );
+        Vec_IntPush( vPairs, Vec_IntEntry(vArray, 0) );
+        vArray = Hsh_VecReadEntry( p->pHashM, iMono );
+        Vec_IntPush( vPairs, Vec_IntSize(vArray) ? Vec_IntEntry(vArray, 0) : 0 );
+        Vec_IntPushTwo( vPairs, iConst, iMono );
+    }
+    // sort triples
+    qsort( Vec_IntArray(vPairs), (size_t)(Vec_IntSize(vPairs)/4), 16, (int (*)(const void *, const void *))Pln_ManCompare3 );
+    // print
+    int nPi = Vec_IntSize(p->pGia->vCis);
+    int nPo = Vec_IntSize(p->pGia->vCos);
+    int ninput = 3; //find by network??
+    int pibit[3] ={4,4,4};
+   // int pobit = 4;
+   
+    printf("# of Pi: %d, # of Po: %d \n",nPi,nPo); 
+    //Initial InfoPio
+    struct InfoPio info;
+    info.nPi =nPi;
+    info.nPo =nPo;
+   
+    info.bit = (int*)malloc(sizeof(int)*100); 
+    info.coeff = (int**)malloc(sizeof(int*)*100);
+    for (int j = 0; j < 100; j++) 
+		info.coeff[j] = (int*)malloc(nPi*sizeof(int)); 
+    
+    info.size =0;
+    int size =0;
+    int cnttmp[100]; 
+    if ( fVerbose )
+    Vec_IntForEachEntryDouble( vPairs, iConst, iMono, i )
+    {
+        if ( i % 4 == 0 )
+            continue;
+        //printf( "%-6d : ", i/4 );
+        int flag = 0;
+        vArray = Hsh_VecReadEntry( p->pHashC, iConst );
+        Vec_IntForEachEntry( vArray, Entry, k ){
+            if(Entry>0 && (1 << (Entry-1)) <= pow(2,nPo-1) ){
+                size++;
+                info.bit[size-1] = Entry;                       
+                printf( "%s%d", Entry < 0 ? "-" : "+", (1 << (Abc_AbsInt(Entry)-1)) );
+                flag = 1;
+            }
+        }
+        if(flag){
+            int cnt =0;
+            vArray = Hsh_VecReadEntry( p->pHashM, iMono );
+            Vec_IntForEachEntry( vArray, Entry, k ){
+                info.coeff[size-1][cnt++] = Entry;
+                printf( " * %d", Entry );
+            }
+            cnttmp[size-1] = cnt;
+            printf( "\n" );
+        }
+    }
+    info.size = size;
+    info.cnt = (int*)malloc(sizeof(int)*size);
+    for (int j = 0; j < size; j++)
+    {
+        info.cnt[j] = cnttmp[j];
+    }
+    
+   /* for(int j=0; j<size; j++){
+        printf("+%d ",info.bit[j]);
+        for(int k=0;k<info.cnt[j];k++){
+            printf("* %d",info.coeff[j][k]);
+        }
+        printf("\n");
+    }*/
+    int *inputcnt =(int*)malloc(ninput*sizeof(int));
+    //initialize inputcnt
+    for(int j=0;j<ninput;j++){
+        inputcnt[j]=0;
+    }
+    
+    int dividor = nPi/ninput; // test01 每四個為一組
+    int flag2,tmp21,tmp22,sum2=0;
+    int cnt2=0;
+    int table1[4*4];
+    int table2[4*4];
+    flag2 =0;
+    for(int j=0;j<info.size;j++){
+        
+        // one term
+        if(info.cnt[j] == 1){
+            int tmp = (int)ceil((double)info.coeff[j][0] /dividor);
+            //printf("%d: %d  ",j,tmp);
+            inputcnt[tmp-1]++;
+        }
+        else if(info.cnt[j] == 2){
+            if(pibit[0] == pibit[1] && pibit[1]== pibit[2]){
+                sum2+= info.coeff[j][0] * info.coeff[j][1];
+                table1[cnt2] = info.coeff[j][0];
+                table2[cnt2++] = info.coeff[j][1];
+            }
+            
+        }
+    }
+
+    printf("out1 = ");
+    //print two term with same bits
+    tmp21 = table1[0];
+    tmp22 = table2[0];
+    int sum2check = 0;
+    for(int j=pibit[0];j>0;j--){
+        for(int k=0;k<j;k++){
+            //printf("%d * %d\n",tmp21+k,tmp22+pibit[0]-j);
+            sum2check+= (tmp21+k)*(tmp22+pibit[0]-j);
+        }
+    }
+    
+    //printf("sum2:%d  sum2check:%d  \n",sum2,sum2check);
+    if(sum2 == sum2check && sum2) flag2 =1;
+        //printf("correct\n");
+    if(flag2){
+        printf("in%d * in%d",(int)ceil(table1[0]/(double)pibit[0]),(int)ceil(table2[0]/(double)pibit[0]));
+        flag2=0;
+    } 
+    
+     //print one term
+   
+    for(int j=0;j<ninput;j++){
+       
+        if(inputcnt[j]==4 && j !=0) printf(" + in%d ",j+1);
+        else if(inputcnt[j]==4)printf(" in%d ",j+1);
+    }
+    printf("\n");
+   
     Vec_IntFree( vPairs );
 }
 
@@ -406,13 +556,93 @@ void Gia_PolynBuild( Gia_Man_t * pGia, Vec_Int_t * vOrder, int fSigned, int fVer
         //clk2 += Abc_Clock() - temp;
     }
     //Abc_PrintTime( 1, "Time2", clk2 );
-    Pln_ManPrintFinal( p, fVerbose, fVeryVerbose );
-    Abc_PrintTime( 1, "Time", Abc_Clock() - clk );
-    Pln_ManStop( p );
+    
+	//Pln_ManPrintFinal( p, fVerbose, fVeryVerbose );
+	Abc_PrintTime( 1, "Time", Abc_Clock() - clk );
+    Pln_ManPrint_CAD( p, fVerbose, 0 );
+	Pln_ManStop( p );
+
     Vec_BitFree( vPres );
 }
 
+void Gia_PolynBuild_CAD( Gia_Man_t * pGia, Vec_Int_t * vOrder, int fSigned, int fVerbose, int fVeryVerbose )
+{
+    abctime clk = Abc_Clock();//, clk2 = 0;
+    Gia_Obj_t * pObj; 
+    Vec_Bit_t * vPres = Vec_BitStart( Gia_ManObjNum(pGia) );
+    int i, iMono, iDriver, LevPrev, LevCur, Iter, Line = 0;
+    Pln_Man_t * p = Pln_ManAlloc( pGia, vOrder );
+    Gia_ManForEachCoReverse( pGia, pObj, i )
+    {
+        Vec_IntFill( p->vTempC[0], 1,  i+1 );      //  2^i
+        Vec_IntFill( p->vTempC[1], 1, -i-1 );      // -2^i
 
+        iDriver = Gia_ObjFaninId0p( pGia, pObj );
+        Vec_IntFill( p->vTempM[0], 1, iDriver );   //  Driver
+
+        if ( fSigned && i == Gia_ManCoNum(pGia)-1 )
+        {
+            if ( Gia_ObjFaninC0(pObj) )
+            {
+                Gia_PolynBuildAdd( p, p->vTempC[1], NULL );           // -C
+                Gia_PolynBuildAdd( p, p->vTempC[0], p->vTempM[0] );   //  C * Driver
+            }
+            else
+                Gia_PolynBuildAdd( p, p->vTempC[1], p->vTempM[0] );   // -C * Driver
+        }
+        else 
+        {
+            if ( Gia_ObjFaninC0(pObj) )
+            {
+                Gia_PolynBuildAdd( p, p->vTempC[0], NULL );           //  C
+                Gia_PolynBuildAdd( p, p->vTempC[1], p->vTempM[0] );   // -C * Driver
+            }
+            else
+                Gia_PolynBuildAdd( p, p->vTempC[0], p->vTempM[0] );   //  C * Driver
+        }
+    }
+    LevPrev = -1;
+    for ( Iter = 0; ; Iter++ )
+    {
+        Vec_Int_t * vTempM;
+        //abctime temp = Abc_Clock();
+        if ( Vec_QueSize(p->vQue) == 0 )
+            break;
+        iMono = Vec_QuePop(p->vQue);
+
+        // report
+        vTempM = Hsh_VecReadEntry( p->pHashM, iMono );
+        //printf( "Removing var %d\n", Vec_IntEntryLast(vTempM) );
+        LevCur = Vec_IntEntryLast(vTempM);
+        if ( !Gia_ObjIsAnd(Gia_ManObj(pGia, LevCur)) )
+            continue;
+
+        if ( LevPrev != LevCur )
+        {
+            if ( Vec_BitEntry( vPres, LevCur ) && fVerbose )
+                printf( "Repeating entry %d\n", LevCur );
+            else
+                Vec_BitSetEntry( vPres, LevCur, 1 );
+
+            if ( fVeryVerbose )
+                printf( "Line%5d   Iter%10d : Obj =%6d.  Order =%6d.  HashC =%6d. HashM =%10d.  Total =%10d. Used =%10d.\n", 
+                    Line++, Iter, LevCur, Vec_IntEntry(p->vOrder, LevCur), Hsh_VecSize(p->pHashC), Hsh_VecSize(p->pHashM), p->nBuilds, p->nUsed );
+        }
+        LevPrev = LevCur;
+
+        Gia_PolynBuildOne( p, iMono );
+        //clk2 += Abc_Clock() - temp;
+    }
+    //Abc_PrintTime( 1, "Time2", clk2 );
+    
+	//Pln_ManPrintFinal( p, fVerbose, fVeryVerbose );
+	Abc_PrintTime( 1, "Time", Abc_Clock() - clk );
+    Pln_ManPrint_CAD( p, fVerbose, 0 );
+    //return info;
+	Pln_ManStop( p );
+
+    Vec_BitFree( vPres );
+}
 
 /**Function*************************************************************
 

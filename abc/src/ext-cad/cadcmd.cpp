@@ -1,19 +1,20 @@
 #include "base/abc/abc.h"
 #include "base/main/main.h"
 #include "base/main/mainInt.h"
-#include "proof/acec/acec.h"
-#include "proof/acec/acecInt.h"
-#include "aig/gia/gia.h"
-
+#include "misc/vec/vecInt.h"
+#include "base/../proof/acec/acecCover.c"
+//#include "base/../proof/acec/acecPolyn.c"
+#include <iostream>
+#include <utility>
+#include <vector>
+using namespace std;
 static int Cad_CommandAigOptimization(Abc_Frame_t *pAbc, int argc, char **argv);
-static int Cad_CommandAigPrintgates(Abc_Frame_t *pAbc, int argc, char **argv);
-static int Cad_CommandPrintFA(Abc_Frame_t *pAbc, int argc, char **argv);
+static int Cad_Commandpoly(Abc_Frame_t *pAbc, int argc, char **argv);
 
 void init(Abc_Frame_t *pAbc)
 {
-  Cmd_CommandAdd(pAbc, "Cad", "alg", Cad_CommandAigOptimization, 0);
-  Cmd_CommandAdd(pAbc, "Cad", "aig_pg", Cad_CommandAigPrintgates, 0);
-  Cmd_CommandAdd(pAbc, "Cad", "FA_p", Cad_CommandPrintFA, 0);
+  Cmd_CommandAdd(pAbc, "Cad", "alg1", Cad_CommandAigOptimization, 0);
+  Cmd_CommandAdd(pAbc, "Cad", "alg2", Cad_Commandpoly, 0);
 }
 
 void destroy(Abc_Frame_t *pAbc) {}
@@ -25,7 +26,13 @@ struct PackageRegistrationManager
   PackageRegistrationManager() { Abc_FrameAddInitializer(&frame_initializer); }
 } CadPackageRegistrationManager;
 
-void Cad_NtkAigOptimization(Abc_Frame_t *pAbc, Abc_Ntk_t *pNtk)
+void Cad_Extractfunc(Abc_Frame_t *pAbc, Abc_Ntk_t *pNtk)
+{
+  Abc_Obj_t *pObj;
+  pObj = Abc_NtkObj(pNtk, Vec_PtrSize((pNtk)->vObjs) - 1);
+}
+
+Abc_Frame_t* Cad_NtkAigOptimization(Abc_Frame_t *pAbc, Abc_Ntk_t *pNtk)
 {
   Abc_Obj_t *pObj;
   pObj = Abc_NtkObj(pNtk, Vec_PtrSize((pNtk)->vObjs) - 1);
@@ -67,8 +74,34 @@ void Cad_NtkAigOptimization(Abc_Frame_t *pAbc, Abc_Ntk_t *pNtk)
       }
     }
   }
+  printf("And: %d\n", and_n);
+  printf("Level: %d\n", level_n);
+  return pAbc;
 }
 
+
+Abc_Frame_t* Cad_poly(Abc_Frame_t *pAbc, Abc_Ntk_t *pNtk)
+{ 
+	/*pNtk = Abc_FrameReadNtk(pAbc);
+    Gia_Man_t * p =	pAbc->pGia;
+    Vec_Int_t * vAdds = Ree_ManComputeCuts( p,NULL ,0);
+	Ree_ManPrintAdders( vAdds, 1);
+	Vec_Int_t *Xor = Vec_IntStart(Vec_IntSize(vAdds)/6);
+	Vec_Int_t *Maj = Vec_IntStart(Vec_IntSize(vAdds)/6);
+	for(int i=0;6*i <Vec_IntSize(vAdds);i++){
+		
+		Vec_IntWriteEntry( Xor, i, Vec_IntEntry(vAdds,6*i+3) );
+		Vec_IntWriteEntry( Maj, i, Vec_IntEntry(vAdds,6*i+4) );
+		cout << "Xor3: " << Vec_IntEntry(Xor,i) <<"      Maj3: " <<Vec_IntEntry(Maj,i)<<endl;
+	}
+	return pAbc;*/
+  Cmd_CommandExecute(pAbc, "r out_.v; &get; ps");
+  Vec_Int_t * vOrder = NULL;
+  
+  Gia_PolynBuild_CAD( pAbc->pGia, vOrder, 0, 1, 0 );
+  Vec_IntFreeP( &vOrder );
+  return pAbc;
+}
 int Cad_CommandAigOptimization(Abc_Frame_t *pAbc, int argc, char **argv)
 {
   Abc_Ntk_t *pNtk = Abc_FrameReadNtk(pAbc);
@@ -92,7 +125,10 @@ int Cad_CommandAigOptimization(Abc_Frame_t *pAbc, int argc, char **argv)
   // start alg
   Cmd_CommandExecute(pAbc, "st; ps");
   pNtk = Abc_FrameReadNtk(pAbc);
-  Cad_NtkAigOptimization(pAbc, pNtk);
+  pAbc = Cad_NtkAigOptimization(pAbc, pNtk);
+  Cmd_CommandExecute(pAbc, "st; ps");
+  pNtk = Abc_FrameReadNtk(pAbc);
+  Cad_Extractfunc(pAbc,pNtk);
   return 0;
 
 usage:
@@ -101,24 +137,7 @@ usage:
   Abc_Print(-2, "\t-h    : print the command usage\n");
   return 1;
 }
-
-void Cad_NtkAigPrintgates(Abc_Frame_t *pAbc, Abc_Ntk_t *pNtk)
-{
-  Abc_Obj_t *pPi;
-  Abc_Obj_t *pPo;
-  int i, j;
-  Abc_NtkForEachPi(pNtk, pPi, i)
-  {
-    printf("Pi Id = %d, name = %s\n", Abc_ObjId(pPi), Abc_ObjName(pPi));
-  }
-
-  Abc_NtkForEachPo(pNtk, pPo, j)
-  {
-    printf("Po Id = %d, name = %s\n", Abc_ObjId(pPo), Abc_ObjName(pPo));
-  }
-}
-
-int Cad_CommandAigPrintgates(Abc_Frame_t *pAbc, int argc, char **argv)
+int Cad_Commandpoly(Abc_Frame_t *pAbc, int argc, char **argv)
 {
   Abc_Ntk_t *pNtk = Abc_FrameReadNtk(pAbc);
   int c;
@@ -138,80 +157,16 @@ int Cad_CommandAigPrintgates(Abc_Frame_t *pAbc, int argc, char **argv)
     Abc_Print(-1, "Empty network.\n");
     return 1;
   }
-  Cad_NtkAigPrintgates(pAbc, pNtk);
+  // start alg2
+  //Cmd_CommandExecute(pAbc, "alg1");
+  Cmd_CommandExecute(pAbc, "st;&get; ps");
+  pNtk = Abc_FrameReadNtk(pAbc);
+  pAbc = Cad_poly(pAbc, pNtk);
   return 0;
 
 usage:
-  Abc_Print(-2, "usage: alg [-h]\n");
-  Abc_Print(-2, "\t        perform aig structure optimization\n");
-  Abc_Print(-2, "\t-h    : print the command usage\n");
-  return 1;
-}
-
-int Cad_CommandPrintFA(Abc_Frame_t *pAbc, int argc, char **argv)
-{
-  Abc_Ntk_t *pNtk = Abc_FrameReadNtk(pAbc);
-  Gia_Man_t *pMan = pAbc->pGia;
-  Vec_Int_t *vXors = NULL;
-  Vec_Int_t *vAdds = Ree_ManComputeCuts(pMan, &vXors, 0);
-
-  for (int i = 0; 6 * i < Vec_IntSize(vAdds); i++)
-  {
-    printf("%6d : ", i);
-    printf("%6d ", Vec_IntEntry(vAdds, 6 * i + 0));
-    printf("%6d ", Vec_IntEntry(vAdds, 6 * i + 1));
-    printf("%6d ", Vec_IntEntry(vAdds, 6 * i + 2));
-    printf("   ->  ");
-    printf("%6d ", Vec_IntEntry(vAdds, 6 * i + 3));
-    printf("%6d ", Vec_IntEntry(vAdds, 6 * i + 4));
-    printf("  (%d)", Vec_IntEntry(vAdds, 6 * i + 5));
-    printf("\n");
-  }
-  Acec_Box_t *pBox = Acec_ProduceBox(pMan, 0);
-  printf("Adders:\n");
-  Acec_PrintAdders(pBox->vAdds, vAdds);
-  printf("Inputs:\n");
-  Vec_WecPrintLits(pBox->vLeafLits);
-  printf("Outputs:\n");
-  Vec_WecPrintLits(pBox->vRootLits);
-
-  Vec_IntFree(vXors);
-  Vec_IntFree(vAdds);
-
-  /*
-  Acec_Box_t *pBox = Acec_ProduceBox(p, 0);
-  Acec_TreePrintBox(pBox, vAdds);
-  Vec_Int_t *vFadds = Gia_ManDetectFullAdders(p, 0, NULL);
-  Vec_Int_t *vHadds = Gia_ManDetectHalfAdders(p, 0);
-  Vec_Int_t *vOrder = Gia_PolynFindOrder(p, vFadds, vHadds, 1, 0);
-  // Vec_Int_t *vTops = Acec_ManPoolTopMost(p, vAdds);
-  */
-
-  int c;
-  Extra_UtilGetoptReset();
-  while ((c = Extra_UtilGetopt(argc, argv, "h")) != EOF)
-  {
-    switch (c)
-    {
-    case 'h':
-      goto usage;
-    default:
-      goto usage;
-    }
-  }
-  if (!pNtk)
-  {
-    Abc_Print(-1, "Empty network.\n");
-    return 1;
-  }
-
-  // Vec_IntFree(vAdds);
-  // Vec_IntFree(vTops);
-  return 0;
-
-usage:
-  Abc_Print(-2, "usage: alg [-h]\n");
-  Abc_Print(-2, "\t        perform aig structure optimization\n");
+  Abc_Print(-2, "usage: alg2 [-h]\n");
+  Abc_Print(-2, "\t        perform aig structure polynomial optimization\n");
   Abc_Print(-2, "\t-h    : print the command usage\n");
   return 1;
 }

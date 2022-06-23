@@ -291,7 +291,7 @@ void Pln_ManPrintFinal( Pln_Man_t * p, int fVerbose, int fVeryVerbose )
     }
     char* tmpstr;
     for(int m=0;m<noutput;m++){
-        printf("out%d = ",m+1);
+        printf("out%d=",m+1);
         //print two term with same bits
         tmp21 = table1[0];
         tmp22 = table2[0];
@@ -303,7 +303,7 @@ void Pln_ManPrintFinal( Pln_Man_t * p, int fVerbose, int fVeryVerbose )
             }
         }
         char str[100] = "";
-        sprintf(str,"out%d = ",m+1);
+        sprintf(str,"out%d=",m+1);
         char str1[100] = "";
         char str2[100] = "";
         char str3[100] ="";
@@ -311,8 +311,8 @@ void Pln_ManPrintFinal( Pln_Man_t * p, int fVerbose, int fVeryVerbose )
         if(sum2 == sum2check && sum2) flag2 =1;
             //printf("correct\n");
         if(flag2){
-            printf("in%d * in%d",(int)ceil(table1[0]/(double)pibit[0]),(int)ceil(table2[0]/(double)pibit[0]));
-            sprintf(str1,"in%d * in%d",(int)ceil(table1[0]/(double)pibit[0]),(int)ceil(table2[0]/(double)pibit[0]));
+            printf("in%d*in%d",(int)ceil(table1[0]/(double)pibit[0]),(int)ceil(table2[0]/(double)pibit[0]));
+            sprintf(str1,"in%d*in%d",(int)ceil(table1[0]/(double)pibit[0]),(int)ceil(table2[0]/(double)pibit[0]));
             flag2=0;
         } 
 
@@ -321,20 +321,20 @@ void Pln_ManPrintFinal( Pln_Man_t * p, int fVerbose, int fVeryVerbose )
         for(int j=0;j<ninput;j++){
             
             if(inputcnt[j]==4 && j !=0) {
-                printf(" + in%d ",j+1);
-                sprintf(str3," + in%d ",j+1);
+                printf("+in%d",j+1);
+                sprintf(str3,"+in%d",j+1);
                 strncat(str2,str3,strlen(str3));
             }
             else if(inputcnt[j]==4){
-                printf(" in%d ",j+1);
-                sprintf(str2," in%d ",j+1);
+                printf("in%d",j+1);
+                sprintf(str2,"in%d",j+1);
             }
         }
 
         printf("\n");
         strncat(str,str1,strlen(str1));
         strncat(str,str2,strlen(str2));
-        strcat(str," ;");
+        strcat(str,";");
         tmpstr =(char*)str;
     }  
     // printf("%s\n",tmpstr);
@@ -601,7 +601,7 @@ void Gia_PolynBuild( Gia_Man_t * pGia, Vec_Int_t * vOrder, int fSigned, int fVer
 
 char* Gia_PolynBuild_CAD( Gia_Man_t * pGia, Vec_Int_t * vOrder, int fSigned, int fVerbose, int fVeryVerbose,int ngatePi,int *pibit,int ngatePo,int *pobit )
 {
-    abctime clk = Abc_Clock();//, clk2 = 0;
+    //abctime clk = Abc_Clock();//, clk2 = 0;
     Gia_Obj_t * pObj; 
     Vec_Bit_t * vPres = Vec_BitStart( Gia_ManObjNum(pGia) );
     int i, iMono, iDriver, LevPrev, LevCur, Iter, Line = 0;
@@ -670,7 +670,7 @@ char* Gia_PolynBuild_CAD( Gia_Man_t * pGia, Vec_Int_t * vOrder, int fSigned, int
     //Abc_PrintTime( 1, "Time2", clk2 );
     
 	//Pln_ManPrintFinal( p, fVerbose, fVeryVerbose );
-	Abc_PrintTime( 1, "Time", Abc_Clock() - clk );
+	//Abc_PrintTime( 1, "Time", Abc_Clock() - clk );
     char* str=Pln_ManPrint_CAD( p, fVerbose, 0 ,ngatePi,pibit,ngatePo,pobit);
     return str;
 	Pln_ManStop( p );

@@ -29,11 +29,11 @@ struct PackageRegistrationManager
   PackageRegistrationManager() { Abc_FrameAddInitializer(&frame_initializer); }
 } CadPackageRegistrationManager;
 
-void Cad_Extractfunc(Abc_Frame_t *pAbc, Abc_Ntk_t *pNtk)
+/*void Cad_Extractfunc(Abc_Frame_t *pAbc, Abc_Ntk_t *pNtk)
 {
   Abc_Obj_t *pObj;
   pObj = Abc_NtkObj(pNtk, Vec_PtrSize((pNtk)->vObjs) - 1);
-}
+}*/
 
 Abc_Frame_t* Cad_NtkAigOptimization(Abc_Frame_t *pAbc, Abc_Ntk_t *pNtk)
 {
@@ -79,6 +79,7 @@ Abc_Frame_t* Cad_NtkAigOptimization(Abc_Frame_t *pAbc, Abc_Ntk_t *pNtk)
   }
   printf("And: %d\n", and_n);
   printf("Level: %d\n", level_n);
+  Cmd_CommandExecute(pAbc, "write_verilog outalg1.v");
   return pAbc;
 }
 
@@ -112,7 +113,7 @@ Abc_Frame_t* Cad_poly(Abc_Frame_t *pAbc, Abc_Ntk_t *pNtk,vector<vector<int> > in
     pobit[i] = infoPo[i].size();
     //cout << "out" << i<<"'s bit = " << pobit[i] <<endl;
   }
-  Cmd_CommandExecute(pAbc, "r out_.v; &get; ps");
+  Cmd_CommandExecute(pAbc, "r out_.v; &get");
   Vec_Int_t * vOrder = NULL;
   char* str =  Gia_PolynBuild_CAD( pAbc->pGia, vOrder, 0, 1, 0 ,ngatePi,pibit,ngatePo,pobit);
   string str2 = str;
@@ -149,9 +150,8 @@ int Cad_CommandAigOptimization(Abc_Frame_t *pAbc, int argc, char **argv)
   Cmd_CommandExecute(pAbc, "st; ps");
   pNtk = Abc_FrameReadNtk(pAbc);
   pAbc = Cad_NtkAigOptimization(pAbc, pNtk);
-  Cmd_CommandExecute(pAbc, "st; ps");
-  pNtk = Abc_FrameReadNtk(pAbc);
-  Cad_Extractfunc(pAbc,pNtk);
+  //Cmd_CommandExecute(pAbc, "st; ps");
+  //Cad_Extractfunc(pAbc,pNtk);
   return 0;
 
 usage:
@@ -253,7 +253,7 @@ int Cad_Commandpoly(Abc_Frame_t *pAbc, int argc, char **argv)
   }
   // start alg2
   //Cmd_CommandExecute(pAbc, "alg1");
-  Cmd_CommandExecute(pAbc, "st;&get; ps");
+  Cmd_CommandExecute(pAbc, "st;&get");
   pNtk = Abc_FrameReadNtk(pAbc);
   pAbc = Cad_poly(pAbc, pNtk, infoPi,infoPo);
   return 0;

@@ -24,6 +24,7 @@
 #include "misc/vec/vecQue.h"
 #include "misc/vec/vecInt.h"
 #include <math.h>
+#include <string.h>
 ABC_NAMESPACE_IMPL_START
 
 ////////////////////////////////////////////////////////////////////////
@@ -167,8 +168,17 @@ void Pln_ManPrintFinal( Pln_Man_t * p, int fVerbose, int fVeryVerbose )
 }
 
 
-void Pln_ManPrint_CAD( Pln_Man_t * p, int fVerbose, int fVeryVerbose )
-{
+ char* Pln_ManPrint_CAD( Pln_Man_t * p, int fVerbose, int fVeryVerbose,int ngatePi,int *Pibit,int ngatePo,int *Pobit )
+{   
+   
+   /*printf( "nagatePi: %d\n", ngatePi);
+  for(int j =0; j<ngatePi;j++){
+    printf( "in%d's bit = %d\n" , j, Pibit[j] );
+  }
+  printf( "nagatePo: %d\n", ngatePo);
+  for(int j =0; j<ngatePo;j++){
+    printf( "out%d's bit = %d\n" , j, Pobit[j] );
+  }*/
     Vec_Int_t * vArray;
     int i, k, Entry, iMono, iConst;
     // collect triples
@@ -185,14 +195,15 @@ void Pln_ManPrint_CAD( Pln_Man_t * p, int fVerbose, int fVeryVerbose )
     }
     // sort triples
     qsort( Vec_IntArray(vPairs), (size_t)(Vec_IntSize(vPairs)/4), 16, (int (*)(const void *, const void *))Pln_ManCompare3 );
-    // print
+   //Initial information of Primary Input and Primary output
     int nPi = Vec_IntSize(p->pGia->vCis);
     int nPo = Vec_IntSize(p->pGia->vCos);
-    int ninput = 3; //find by network??
-    int pibit[3] ={4,4,4};
-   // int pobit = 4;
+    int ninput = ngatePi;  //# of input gates
+    int noutput = ngatePo;  //# of output gates
+    int *pibit = Pibit;
+    int *pobit = Pobit;
    
-    printf("# of Pi: %d, # of Po: %d \n",nPi,nPo); 
+    //printf("# of Pi: %d, # of Po: %d \n",nPi,nPo); 
     //Initial InfoPio
     struct InfoPio info;
     info.nPi =nPi;
@@ -214,11 +225,13 @@ void Pln_ManPrint_CAD( Pln_Man_t * p, int fVerbose, int fVeryVerbose )
         //printf( "%-6d : ", i/4 );
         int flag = 0;
         vArray = Hsh_VecReadEntry( p->pHashC, iConst );
+        
+        // get the information of simplified output represntation from &polyn
         Vec_IntForEachEntry( vArray, Entry, k ){
             if(Entry>0 && (1 << (Entry-1)) <= pow(2,nPo-1) ){
                 size++;
                 info.bit[size-1] = Entry;                       
-                printf( "%s%d", Entry < 0 ? "-" : "+", (1 << (Abc_AbsInt(Entry)-1)) );
+                //printf( "%s%d", Entry < 0 ? "-" : "+", (1 << (Abc_AbsInt(Entry)-1)) );
                 flag = 1;
             }
         }
@@ -227,17 +240,17 @@ void Pln_ManPrint_CAD( Pln_Man_t * p, int fVerbose, int fVeryVerbose )
             vArray = Hsh_VecReadEntry( p->pHashM, iMono );
             Vec_IntForEachEntry( vArray, Entry, k ){
                 info.coeff[size-1][cnt++] = Entry;
-                printf( " * %d", Entry );
+                //printf( " * %d", Entry );
             }
-            cnttmp[size-1] = cnt;
-            printf( "\n" );
+            cnttmp[size-1] = cnt; // count # of coefficient term for every bit
+           // printf( "\n" );
         }
     }
     info.size = size;
     info.cnt = (int*)malloc(sizeof(int)*size);
     for (int j = 0; j < size; j++)
     {
-        info.cnt[j] = cnttmp[j];
+        info.cnt[j] = cnttmp[j]; // write "# of coefficient term for every bit" into infoPio
     }
     
    /* for(int j=0; j<size; j++){
@@ -253,7 +266,7 @@ void Pln_ManPrint_CAD( Pln_Man_t * p, int fVerbose, int fVeryVerbose )
         inputcnt[j]=0;
     }
     
-    int dividor = nPi/ninput; // test01 每四個為一組
+    int dividor = pibit[0]; // test01 每四個為一組
     int flag2,tmp21,tmp22,sum2=0;
     int cnt2=0;
     int table1[4*4];
@@ -276,36 +289,57 @@ void Pln_ManPrint_CAD( Pln_Man_t * p, int fVerbose, int fVeryVerbose )
             
         }
     }
-
-    printf("out1 = ");
-    //print two term with same bits
-    tmp21 = table1[0];
-    tmp22 = table2[0];
-    int sum2check = 0;
-    for(int j=pibit[0];j>0;j--){
-        for(int k=0;k<j;k++){
-            //printf("%d * %d\n",tmp21+k,tmp22+pibit[0]-j);
-            sum2check+= (tmp21+k)*(tmp22+pibit[0]-j);
+    char* tmpstr;
+    for(int m=0;m<noutput;m++){
+        printf("out%d = ",m+1);
+        //print two term with same bits
+        tmp21 = table1[0];
+        tmp22 = table2[0];
+        int sum2check = 0;
+        for(int j=pibit[0];j>0;j--){
+            for(int k=0;k<j;k++){
+                //printf("%d * %d\n",tmp21+k,tmp22+pibit[0]-j);
+                sum2check+= (tmp21+k)*(tmp22+pibit[0]-j);
+            }
         }
-    }
+        char str[100] = "";
+        sprintf(str,"out%d = ",m+1);
+        char str1[100] = "";
+        char str2[100] = "";
+        char str3[100] ="";
+        //printf("sum2:%d  sum2check:%d  \n",sum2,sum2check);
+        if(sum2 == sum2check && sum2) flag2 =1;
+            //printf("correct\n");
+        if(flag2){
+            printf("in%d * in%d",(int)ceil(table1[0]/(double)pibit[0]),(int)ceil(table2[0]/(double)pibit[0]));
+            sprintf(str1,"in%d * in%d",(int)ceil(table1[0]/(double)pibit[0]),(int)ceil(table2[0]/(double)pibit[0]));
+            flag2=0;
+        } 
+
+            //print one term
+
+        for(int j=0;j<ninput;j++){
+            
+            if(inputcnt[j]==4 && j !=0) {
+                printf(" + in%d ",j+1);
+                sprintf(str3," + in%d ",j+1);
+                strncat(str2,str3,strlen(str3));
+            }
+            else if(inputcnt[j]==4){
+                printf(" in%d ",j+1);
+                sprintf(str2," in%d ",j+1);
+            }
+        }
+
+        printf("\n");
+        strncat(str,str1,strlen(str1));
+        strncat(str,str2,strlen(str2));
+        strcat(str," ;");
+        tmpstr =(char*)str;
+    }  
+    // printf("%s\n",tmpstr);
     
-    //printf("sum2:%d  sum2check:%d  \n",sum2,sum2check);
-    if(sum2 == sum2check && sum2) flag2 =1;
-        //printf("correct\n");
-    if(flag2){
-        printf("in%d * in%d",(int)ceil(table1[0]/(double)pibit[0]),(int)ceil(table2[0]/(double)pibit[0]));
-        flag2=0;
-    } 
-    
-     //print one term
-   
-    for(int j=0;j<ninput;j++){
-       
-        if(inputcnt[j]==4 && j !=0) printf(" + in%d ",j+1);
-        else if(inputcnt[j]==4)printf(" in%d ",j+1);
-    }
-    printf("\n");
-   
+    return tmpstr;
     Vec_IntFree( vPairs );
 }
 
@@ -557,15 +591,15 @@ void Gia_PolynBuild( Gia_Man_t * pGia, Vec_Int_t * vOrder, int fSigned, int fVer
     }
     //Abc_PrintTime( 1, "Time2", clk2 );
     
-	//Pln_ManPrintFinal( p, fVerbose, fVeryVerbose );
+	Pln_ManPrintFinal( p, fVerbose, fVeryVerbose );
 	Abc_PrintTime( 1, "Time", Abc_Clock() - clk );
-    Pln_ManPrint_CAD( p, fVerbose, 0 );
+    //Pln_ManPrint_CAD( p, fVerbose, 0 );
 	Pln_ManStop( p );
 
     Vec_BitFree( vPres );
 }
 
-void Gia_PolynBuild_CAD( Gia_Man_t * pGia, Vec_Int_t * vOrder, int fSigned, int fVerbose, int fVeryVerbose )
+char* Gia_PolynBuild_CAD( Gia_Man_t * pGia, Vec_Int_t * vOrder, int fSigned, int fVerbose, int fVeryVerbose,int ngatePi,int *pibit,int ngatePo,int *pobit )
 {
     abctime clk = Abc_Clock();//, clk2 = 0;
     Gia_Obj_t * pObj; 
@@ -637,8 +671,8 @@ void Gia_PolynBuild_CAD( Gia_Man_t * pGia, Vec_Int_t * vOrder, int fSigned, int 
     
 	//Pln_ManPrintFinal( p, fVerbose, fVeryVerbose );
 	Abc_PrintTime( 1, "Time", Abc_Clock() - clk );
-    Pln_ManPrint_CAD( p, fVerbose, 0 );
-    //return info;
+    char* str=Pln_ManPrint_CAD( p, fVerbose, 0 ,ngatePi,pibit,ngatePo,pobit);
+    return str;
 	Pln_ManStop( p );
 
     Vec_BitFree( vPres );

@@ -70,12 +70,12 @@ using namespace ABC_NAMESPACE;
 int main(int argc, char *argv[])
 {
   // parameters
-  int fVerify;
+  // int fVerify;
   // variables
   Abc_Frame_t *pAbc;
   // char *pFileIn;
   char Command[1000];
-  clock_t clkRead, clkResyn, clkVer, clk;
+  clock_t clkRead, clkResyn, clk;
 
   //////////////////////////////////////////////////////////////////////////
   // get the input file name

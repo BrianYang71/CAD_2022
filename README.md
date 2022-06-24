@@ -29,22 +29,43 @@ Run our algorithm in the environment of `abc`.
 ## Directory
 |  dir   |  description  |
 | :------:  | :------: |
-|  abc   |  abc package  |
+|  abc   |  abc package and demo.cpp|
 |  release   |  input files  |
-|  tool  |  executable binary |
+|  tool  |  convert and write |
 
 ---
 ## HOW TO COMPILE
+### Method 1
 
-To compile ABC as a binary,
+1. compile ABC as a static library
+2. compile demo.cpp to get an executable binary
+
+* `cd abc/`
+* `make libabc.a`
+* `g++ -Wall -g -c demo.cpp -o demo.o`
+* `g++ -g -o demo demo.o libabc.a -lm -ldl -lreadline -lpthread`
+
+Then, move the executable binary `demo` to the base directory.
+
+### Method 2
+
+1. compile ABC as a binary
+2. compile convert.cpp and write.cpp
 
 * `cd abc/`
 * `make`
+
+* `cd ..`
+* `cd tool/`
+* `g++ -o convert convert.cpp`
+* `g++ -o write write.cpp`
 
 ---
 ## HOW TO RUN
 
 ### Method 1 
+(Under the base directory)
+
     ./demo ./release/test01/top_primitive.v write_out.v
 
  Output file `write_out.v` will be the simplified verilog rewriting from `release/test01/top_primitive.v`.
@@ -57,6 +78,7 @@ The process is separated into 3 steps.
 
 #### Step 1. 
 Convert the input file (gate-level verilog) to **abc readable input file** (dataflow verilog)
+(under the base dircetory)
 
     ./tool/convert <input_file_name> 
 For example,

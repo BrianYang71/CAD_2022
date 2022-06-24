@@ -31,10 +31,10 @@ Run our algorithm in the environment of `abc`.
 | :------:  | :------: |
 |  abc   |  abc package  |
 |  release   |  input files  |
-|  tool  |  executabl binary |
+|  tool  |  executable binary |
 
 ---
-## HOW TO CIMPILE
+## HOW TO COMPILE
 
 To compile ABC as a binary,
 

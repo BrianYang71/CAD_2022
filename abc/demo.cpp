@@ -70,12 +70,12 @@ using namespace ABC_NAMESPACE;
 int main(int argc, char *argv[])
 {
   // parameters
-  int fVerify = 0;
+  int fVerify;
   // variables
   Abc_Frame_t *pAbc;
   // char *pFileIn;
   char Command[1000];
-  clock_t clkRead, clkResyn = 0, clkVer, clk;
+  clock_t clkRead, clkResyn, clkVer, clk;
 
   //////////////////////////////////////////////////////////////////////////
   // get the input file name
@@ -242,6 +242,7 @@ int main(int argc, char *argv[])
 
   //////////////////////////////////////////////////////////////////////////
   // change to GIA
+  clk = clock();
   sprintf(Command, "strash");
   if (Cmd_CommandExecute(pAbc, Command))
   {
@@ -257,20 +258,21 @@ int main(int argc, char *argv[])
 
   //////////////////////////////////////////////////////////////////////////
   // algorithm
+  /*
+    sprintf(Command, "print_stats");
+    if (Cmd_CommandExecute(pAbc, Command))
+    {
+      fprintf(stdout, "Cannot execute command \"%s\".\n", Command);
+      return 1;
+    }
 
-  sprintf(Command, "print_stats");
-  if (Cmd_CommandExecute(pAbc, Command))
-  {
-    fprintf(stdout, "Cannot execute command \"%s\".\n", Command);
-    return 1;
-  }
-
-/*  sprintf(Command, "alg2");
-  if (Cmd_CommandExecute(pAbc, Command))
-  {
-    fprintf(stdout, "Cannot execute command \"%s\".\n", Command);
-    return 1;
-  }*/
+   sprintf(Command, "alg2");
+    if (Cmd_CommandExecute(pAbc, Command))
+    {
+      fprintf(stdout, "Cannot execute command \"%s\".\n", Command);
+      return 1;
+    }
+  */
   //////////////////////////////////////////////////////////////////////////
   // write the result in output verilog
   ifstream fin2("./out_.v");
@@ -279,7 +281,7 @@ int main(int argc, char *argv[])
   string formula[num];
 
   // Please place the simplified formula here.
-  formula[0] = "out1 = in1 + in2 + in3";
+  formula[0] = "out1=in1+in2+in3";
 
   while (getline(fin2, line))
   {
@@ -298,13 +300,15 @@ int main(int argc, char *argv[])
   fout2 << "endmodule";
   fin2.close();
   fout2.close();
+  clkResyn = clock() - clk;
 
   //////////////////////////////////////////////////////////////////////////
   // perform verification
+  /*
   clk = clock();
   if (fVerify)
   {
-    sprintf(Command, "cec %s result.blif", "./out_.v");
+    sprintf(Command, "cec %s out_.v", "./write_out.v");
     if (Cmd_CommandExecute(pAbc, Command))
     {
       fprintf(stdout, "Cannot execute command \"%s\".\n", Command);
@@ -312,10 +316,11 @@ int main(int argc, char *argv[])
     }
   }
   clkVer = clock() - clk;
+  */
 
-  printf("Reading = %6.2f sec   ", (float)(clkRead) / (float)(CLOCKS_PER_SEC));
-  printf("Rewriting = %6.2f sec   ", (float)(clkResyn) / (float)(CLOCKS_PER_SEC));
-  printf("Verification = %6.2f sec\n", (float)(clkVer) / (float)(CLOCKS_PER_SEC));
+  // printf("Reading = %6.2f sec   ", (float)(clkRead) / (float)(CLOCKS_PER_SEC));
+  // printf("Rewriting = %6.2f sec   ", (float)(clkResyn) / (float)(CLOCKS_PER_SEC));
+  // printf("Verification = %6.2f sec\n", (float)(clkVer) / (float)(CLOCKS_PER_SEC));
 
   //////////////////////////////////////////////////////////////////////////
   // stop the ABC framework

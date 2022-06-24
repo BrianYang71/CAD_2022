@@ -54,7 +54,6 @@ Then, move the executable binary `demo` to the base directory.
 
 * `cd abc/`
 * `make`
-
 * `cd ..`
 * `cd tool/`
 * `g++ -o convert convert.cpp`

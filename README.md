@@ -55,7 +55,7 @@ To compile ABC as a binary,
 ### Method 2
 The process is separated into 3 steps.
 
-Step 1. \
+#### Step 1. 
 Convert the input file (gate-level verilog) to **abc readable input file** (dataflow verilog)
 
     ./tool/convert <input_file_name> 
@@ -64,7 +64,7 @@ For example,
     ./tool/convert ./release/test01/top_primitive.v
 It will generate a file named `out_.v`
 
-Step 2. \
+#### Step 2. 
 Run our algorithm in the environment of abc
 
     [...] ~/> cd abc/
@@ -82,7 +82,7 @@ Back to the base directory
     abc 04> q
     [...] ~/abc> cd ..
  
- Step 3.\
+#### Step 3.
  Write the `write_out.v` verilog \
  copy the result printed in the terminal and paste it in the **fourth argument** of the terminal
 

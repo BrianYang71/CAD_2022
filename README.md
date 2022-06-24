@@ -48,7 +48,7 @@ Run our algorithm in the environment of `abc`.
 Then, move the executable binary `demo` to the base directory.
 
 ### Method 2
-
+(Suggested system: Linux / WSL / Mac)
 1. compile ABC as a binary
 2. compile convert.cpp and write.cpp
 

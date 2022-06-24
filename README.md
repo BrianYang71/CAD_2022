@@ -95,5 +95,5 @@ Then, `write_out.v` is the final output verilog.
 ---
 
 ## OTHER NOTICE
-Currently, we can only rewrite test case 1 and 2. \
-Please access to only these two input files
+Currently, we can only rewrite test case01 and case02. \
+Please access to only these two input files.

@@ -58,7 +58,7 @@ The process is separated into 3 steps.
 Step 1. \
 Convert the input file (gate-level verilog) to **abc readable input file** (dataflow verilog)
 
-    ./tool/convert <input_file_name> \
+    ./tool/convert <input_file_name> 
 For example,
 
     ./tool/convert ./release/test01/top_primitive.v
